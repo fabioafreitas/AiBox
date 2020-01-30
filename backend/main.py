@@ -40,7 +40,6 @@ def get_history_endpoint():
     if symbol != "PETR4.SAO" and symbol != "VALE3.SAO" and symbol != "ITUB4.SAO":
         return jsonify("Só são aceitos no momento as ações da: Pretrobras (PETR4.SAO), Vale (VALE3.SAO) e Itau (ITUB4.SAO)"), 404
     
-
     df = pd.read_csv('dataset.csv', index_col=['date'])[1:]
     return jsonify({
         'date': df.index.tolist(),
