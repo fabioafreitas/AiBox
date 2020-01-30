@@ -20,12 +20,13 @@ def treinar_modelo_endpoint():
 
 @app.route('/testar')
 def previsao_endpoint():
-    previous_data, predicted_data = stocks.use_model()
+    previous_data, predicted_data, meta_data = stocks.use_model()
     previous_data = np.reshape(previous_data, (len(previous_data)), order='F')
     predicted_data = np.reshape(predicted_data, (len(predicted_data)), order='F')
     return jsonify({
         'previous_data':previous_data.tolist(),
-        'current_data':predicted_data.tolist()
+        'current_data':predicted_data.tolist(),
+        'meta_data':meta_data
     })
 
 if __name__ == '__main__':
