@@ -69,6 +69,14 @@ def load_dataset(file_path, index_name):
     df = normalize_data(df)
     return df
 
+
+def denormalize_close(dataset, value_to_be_denormalized):
+    minimum = dataset['close'].min()
+    maximum = dataset['close'].max()
+
+    return (value_to_be_denormalized * (maximum - minimum)) + minimum
+
+
 def normalize_data(dataset):
     # Normalização dos dados
     df = dataset
@@ -124,12 +132,14 @@ def train_lstm(x_data_train, y_data_train):
     return predictor
 
 
-def train_model(file_path, index_name, symbol='PETR4.SAO'):
+def train_model(symbol='PETR4.SAO'):
     # Carregando dados do database
     # df = load_dataset(file_path, index_name) # replaced by data from service
     token_hard_coded = KEY_1
-    # df, meta = da.get_daily_history(token_1=token_hard_coded, symbol=symbol, amount_of_entries=3500)  # Get data from service
-    df = pd.read_csv('dataset.csv')
+    df, meta = da.get_daily_history(token_1=token_hard_coded, symbol=symbol, amount_of_entries=3500)  # Get data from service
+    sep = os.path.sep
+    filename = 'datasets'+sep+'history_'+symbol+'.csv'
+    df = pd.read_csv(filename, index_col=['date'])
     df = normalize_data(df)
 
     # WAVELET TRANSFORMATION na coluna "close"
@@ -160,28 +170,29 @@ def train_model(file_path, index_name, symbol='PETR4.SAO'):
     lstm = train_lstm(x_data_train, y_data_train)
 
     sep = os.path.sep
-    lstm.save("trained_model"+sep+"model_lstm.h5")
-    sae.save("trained_model"+sep+"model_sae.h5")
+    lstm.save("trained_model"+sep+"model_lstm_"+symbol+".h5")
+    sae.save("trained_model"+sep+"model_sae_"+symbol+".h5")
 
     return x_data_test, y_data_test
 
 
-def load_trained_model():
+def load_trained_model(symbol):
     sep = os.path.sep
-    sae = load_model("trained_model"+sep+"model_sae.h5")
-    lstm = load_model("trained_model"+sep+"model_lstm.h5")
+    sae = load_model("trained_model"+sep+"model_sae_"+symbol+".h5")
+    lstm = load_model("trained_model"+sep+"model_lstm_"+symbol+".h5")
     return sae, lstm
 
 
 # Avalia o desempenho do trained_model
 # Realiza o treino e teste na proporção 80:20
 # Plota o gráfico de comparação do trained_model e imprime as métricas
-def evaluate_model_performance(file_path, index_name):
+def evaluate_model_performance(symbol='PETR4.SAO'):
     sep = os.path.sep
-    x_data_test, y_data_test = train_model(file_path, index_name)
-    sae, lstm = load_trained_model()
+    x_data_test, y_data_test = train_model(symbol=symbol)
+    sae, lstm = load_trained_model('PETR4.SAO')
+    # sae, lstm = load_trained_model('VALE3.SAO')
+    # sae, lstm = load_trained_model('ITUB4.SAO')
 
-    print(x_data_test.shape)
     predicted_value = lstm.predict(x_data_test)
 
     # Fazer um plot do resultado
@@ -223,17 +234,16 @@ def evaluate_model_performance(file_path, index_name):
 # Recebe a série temporal do dia atual e tenta prever o valor de fechamento
 # Retorna os dados de "fechamento anteriores" e a "previsão"
 # TODO Esta função ainda está em desenvolvimento
-def use_model():
-    sae, lstm = load_trained_model()
-
+def use_model(symbol):
+    sep = os.path.sep
+    sae, lstm = load_trained_model(symbol)
     # Load today's data
-    token_hard_coded = KEY_1
-    symbol_hard_coded = 'PETR4.SAO'
-    df, meta_data = da.get_intraday_data(token_1=token_hard_coded, symbol=symbol_hard_coded, interval='5min')
-    df = pd.read_csv('intraday.csv')
-    df = df[0]  # Get most recent entry
+    df, meta_data = da.get_intraday_data(token_1=KEY_1, symbol=symbol, interval='5min')
+    filename = 'datasets'+sep+'dataset_'+symbol+'.csv'
+    df = pd.read_csv(filename, index_col=['date'])
+    df = df[:1]  # Get most recent entry
     # Apply Wavelet Transformation
-    df['close'] = wavelet_transform(df['close'])
+    # df['close'] = wavelet_transform(df['close'])
     # Pass dataset through Stacked Autoencoder
     close_column_backup = df['close'].copy().values
     df = df.drop(columns=['close'])
@@ -248,4 +258,6 @@ def use_model():
     x_data_test = np.reshape(x_data_test.values, (x_data_test.shape[0], x_data_test.shape[1], 1))
     # Predict value using LSTM
     predicted_value = lstm.predict(x_data_test)
-    return y_data_test.values, predicted_value, meta_data
+    # Denormalize predicted value
+    predicted_value_denormalized = denormalize_close(y_data_test, predicted_value)
+    return y_data_test.values, predicted_value_denormalized

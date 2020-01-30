@@ -102,16 +102,16 @@ def get_daily_history(token_1, symbol, amount_of_entries=1000):
     merged = merged.merge(d10, left_index=True, right_index=True)
     merged = merged.merge(d11, left_index=True, right_index=True)
 
-    merged.to_csv('dataset.csv', index=False)
+    sep = os.path.sep
+    filename = 'datasets'+sep+'history_'+symbol+'.csv'
+    merged.to_csv(filename, index=True)
     return merged, meta_time_series
 
 
 def get_intraday_data(token_1, symbol, interval='15min'):
     ts_1 = TimeSeries(key=token_1, output_format='pandas')
     ti_1 = TechIndicators(key=token_1, output_format='pandas')
-
     series_type = 'open'
-
     # Fetch dataset from api
     # OHLC series #1
     time_series, meta_time_series = ts_1.get_intraday(symbol=symbol, interval=interval, outputsize='compact')
@@ -176,20 +176,6 @@ def get_intraday_data(token_1, symbol, interval='15min'):
     d10.columns = ['mtm6']
     d11 = mtm_12[:amount_of_entries]
     d11.columns = ['mtm12']
-
-    print(d1)
-    print(d2)
-    print(d3)
-    print(d4)
-    print(d5)
-    print(d6)
-    print(d7)
-    print(d8)
-    print(d9)
-    print(d10)
-    print(d11)
-    x = input()
-
     # Merge elements
     merged = d1.merge(d2, left_index=True, right_index=True)
     merged = merged.merge(d3, left_index=True, right_index=True)
@@ -202,5 +188,7 @@ def get_intraday_data(token_1, symbol, interval='15min'):
     merged = merged.merge(d10, left_index=True, right_index=True)
     merged = merged.merge(d11, left_index=True, right_index=True)
 
-    merged.to_csv('intraday.csv', index=False)
+    sep = os.path.sep
+    filename = 'datasets'+sep+'intraday_'+symbol+'.csv'
+    merged.to_csv(filename, index=True)
     return merged, meta_time_series
