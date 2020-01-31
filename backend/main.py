@@ -2,6 +2,7 @@ from flask import Flask, escape, request, json, jsonify
 import stock_prediction as stocks
 import numpy as np
 import pandas as pd
+import os
 
 app = Flask(__name__)
 
@@ -40,7 +41,9 @@ def get_history_endpoint():
     if symbol != "PETR4.SAO" and symbol != "VALE3.SAO" and symbol != "ITUB4.SAO":
         return jsonify("Só são aceitos no momento as ações da: Pretrobras (PETR4.SAO), Vale (VALE3.SAO) e Itau (ITUB4.SAO)"), 404
     
-    df = pd.read_csv('dataset.csv', index_col=['date'])[1:]
+    sep = os.path.sep
+    filename = 'datasets'+sep+'history_'+symbol+'.csv'
+    df = pd.read_csv(filename, index_col=['date'])[1:]
     return jsonify({
         'date': df.index.tolist(),
         'close': df['close'].values.tolist(),
@@ -52,4 +55,4 @@ def teste():
     return jsonify("Servidor Online!")
 
 if __name__ == '__main__':
-    app.run(host="127.0.0.1", port="3000")
+    app.run(host="127.0.0.1", port="3000", threaded=False) # don`t remove threaded=False

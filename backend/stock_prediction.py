@@ -143,7 +143,7 @@ def train_model(symbol='PETR4.SAO'):
     df = normalize_data(df)
 
     # WAVELET TRANSFORMATION na coluna "close"
-    df['close'] = wavelet_transform(df['close'])
+    # df['close'] = wavelet_transform(df['close'])
 
     # STACKED AUTOENCODER
     sae = train_stacked_autoencoder(df.drop(columns=['close']))
@@ -178,6 +178,7 @@ def train_model(symbol='PETR4.SAO'):
 
 def load_trained_model(symbol):
     sep = os.path.sep
+    print("trained_model"+sep+"model_sae_"+symbol+".h5")
     sae = load_model("trained_model"+sep+"model_sae_"+symbol+".h5")
     lstm = load_model("trained_model"+sep+"model_lstm_"+symbol+".h5")
     return sae, lstm
@@ -189,7 +190,7 @@ def load_trained_model(symbol):
 def evaluate_model_performance(symbol='PETR4.SAO'):
     sep = os.path.sep
     x_data_test, y_data_test = train_model(symbol=symbol)
-    sae, lstm = load_trained_model('PETR4.SAO')
+    sae, lstm = load_trained_model(symbol)
     # sae, lstm = load_trained_model('VALE3.SAO')
     # sae, lstm = load_trained_model('ITUB4.SAO')
 
@@ -239,7 +240,7 @@ def use_model(symbol):
     sae, lstm = load_trained_model(symbol)
     # Load today's data
     df, meta_data = da.get_intraday_data(token_1=KEY_1, symbol=symbol, interval='5min')
-    filename = 'datasets'+sep+'dataset_'+symbol+'.csv'
+    filename = 'datasets'+sep+'history_'+symbol+'.csv'
     df = pd.read_csv(filename, index_col=['date'])
     df = df[:1]  # Get most recent entry
     # Apply Wavelet Transformation
